@@ -1,0 +1,24 @@
+<div class="fixed top-4 right-4 space-y-2 z-[99]">
+  <div
+    *ngFor="let notif of notifications"
+    [class]="'notification-item ' + getNotificationClass(notif.type)"
+    [@slideIn]
+    class="rounded-lg shadow-lg p-4 text-white flex items-center justify-between min-w-64 cursor-pointer"
+    (click)="removeNotification(notif.id)"
+  >
+    <div class="flex items-center gap-3">
+      <span *ngIf="notif.type === 'success'" class="text-xl">✓</span>
+      <span *ngIf="notif.type === 'error'" class="text-xl">✕</span>
+      <span *ngIf="notif.type === 'warning'" class="text-xl">⚠</span>
+      <span *ngIf="notif.type === 'info'" class="text-xl">ℹ</span>
+      <span>{{ notif.message }}</span>
+    </div>
+    <button
+      type="button"
+      class="ml-4 text-white hover:opacity-75 transition"
+      (click)="removeNotification(notif.id); $event.stopPropagation()"
+    >
+      ✕
+    </button>
+  </div>
+</div>
