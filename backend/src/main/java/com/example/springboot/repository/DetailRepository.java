@@ -2,7 +2,9 @@ package com.example.springboot.repository;
 
 import com.example.springboot.entity.Detail;
 import com.example.springboot.entity.Transaction;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,4 +22,8 @@ public interface DetailRepository extends JpaRepository<Detail, Long> {
     @Param("cardType") long cardType,
     @Param("value") long value
   );
+  @Modifying
+  @Transactional
+  @Query("DELETE FROM Detail d WHERE d.transaction.id = :transactionId")
+  void deleteByTransactionId(@Param("transactionId") long transactionId);
 }

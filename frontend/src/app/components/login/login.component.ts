@@ -12,22 +12,51 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   username = '';
   password = '';
-  errorMessage = '';
+  fieldErrors: { [key: string]: string } = {};
+  isLoading = false;
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
+  validateFields(): boolean {
+    this.fieldErrors = {};
+    
+    if (!this.username) {
+      this.fieldErrors['username'] = 'Tên đăng nhập không được để trống';
+    }
+    if (!this.password) {
+      this.fieldErrors['password'] = 'Mật khẩu không được để trống';
+    }
+    
+    return Object.keys(this.fieldErrors).length === 0;
+  }
+
   onSubmit(): void {
-    if (!this.username || !this.password) {
-      this.errorMessage = 'Vui lòng nhập đầy đủ thông tin';
+    if (!this.validateFields()) {
       return;
     }
 
-    const success = this.authService.login(this.username, this.password);
-    if (success) {
-      this.router.navigate(['/bill']);
-    }
+    this.isLoading = true;
+    this.fieldErrors = {};
+
+    // Uppercase username trước khi gửi
+    const uppercaseUsername = this.username.toUpperCase();
+    this.authService.login(uppercaseUsername, this.password).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        this.router.navigate(['/home']);
+      },
+      error: (error) => {
+        this.isLoading = false;
+        const errorMsg = error.error?.error || 'Đăng nhập thất bại. Vui lòng thử lại';
+        this.fieldErrors['general'] = errorMsg;
+      }
+    });
+  }
+
+  navigateToRegister(): void {
+    this.router.navigate(['/register']);
   }
 }

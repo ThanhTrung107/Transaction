@@ -1,0 +1,125 @@
+<div class="min-h-screen bg-gray-100 flex">
+  <!-- Sidebar -->
+  <aside class="w-40 h-screen sticky top-0 bg-gradient-to-b from-blue-600 to-blue-700 text-white p-6 flex flex-col shadow-lg overflow-y-auto">
+    <!-- Logo/Avatar -->
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center mx-auto mb-3">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+          <span class="text-xl font-bold">{{ username ? username.charAt(0) : 'U' }}</span>
+        </div>
+      </div>
+      <h1 class="text-lg font-bold">Trang chủ</h1>
+    </div>
+
+    <!-- User Info -->
+    <div class="bg-zinc-700 bg-opacity-10 rounded-lg p-3 mb-6 text-sm">
+      <p class="font-semibold">{{ username }}</p>
+      <p class="text-xs text-blue-100 capitalize">{{ userRole }}</p>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 space-y-2">
+      <button
+        (click)="setActiveMenu('overview')"
+        [class.bg-white]="activeMenu === 'overview'"
+        [class.bg-opacity-20]="activeMenu === 'overview'"
+        [class.text-blue-700]="activeMenu === 'overview'"
+        class="w-full text-left px-4 py-2 rounded-md hover:bg-white hover:bg-opacity-10 transition-colors text-sm font-medium"
+      >
+        <i class="pi pi-home mr-2"></i>Tổng quan
+      </button>
+
+      <button
+        (click)="setActiveMenu('transactions')"
+        [class.bg-white]="activeMenu === 'transactions'"
+        [class.bg-opacity-20]="activeMenu === 'transactions'"
+        [class.text-blue-700]="activeMenu === 'transactions'"
+        class="w-full text-left px-4 py-2 rounded-md hover:bg-white hover:bg-opacity-10 transition-colors text-sm font-medium"
+      >
+        <i class="pi pi-shopping-cart mr-2"></i>Giao dịch
+      </button>
+
+      <button
+        (click)="setActiveMenu('settings')"
+        [class.bg-white]="activeMenu === 'settings'"
+        [class.bg-opacity-20]="activeMenu === 'settings'"
+        [class.text-blue-700]="activeMenu === 'settings'"
+        class="w-full text-left px-4 py-2 rounded-md hover:bg-white hover:bg-opacity-10 transition-colors text-sm font-medium"
+      >
+        <i class="pi pi-cog mr-2"></i>Cài đặt
+      </button>
+    </nav>
+
+    <!-- Logout -->
+    <button
+      (click)="logout()"
+      class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+    >
+      <i class="pi pi-sign-out"></i>Đăng xuất
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-auto">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">
+          @switch (activeMenu) {
+            @case ('overview') { Tổng quan }
+            @case ('settings') { Cài đặt }
+            @case ('transactions') { Danh sách giao dịch mua sắm }
+          }
+        </h2>
+        <p class="text-sm text-gray-500 mt-1">
+          @switch (activeMenu) {
+            @case ('overview') { Xem tổng quan hệ thống }
+            @case ('settings') { Cấu hình hệ thống }
+          }
+        </p>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="p-8">
+      @switch (activeMenu) {
+        @case ('overview') {
+
+          <!-- Welcome Section -->
+          <div class="bg-white rounded-lg shadow p-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Chào mừng!</h1>
+            <p class="text-gray-600 mb-6 leading-relaxed">
+              Đây là trang chủ của ứng dụng quản lý giao dịch. Bạn có thể xem tổng quan, quản lý giao dịch, xem báo cáo và cấu hình hệ thống từ sidebar bên trái.
+            </p>
+            <button
+              (click)="navigateToBill()"
+              class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium inline-flex items-center gap-2"
+            >
+              <i class="pi pi-arrow-right"></i>Xem giao dịch
+            </button>
+          </div>
+        }
+
+        @case ('transactions') {
+          <app-bill></app-bill>
+        }
+
+        @case ('settings') {
+          <div class="bg-white rounded-lg shadow p-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Cài đặt</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tên người dùng</label>
+                <input type="text" [value]="username" disabled class="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Vai trò</label>
+                <input type="text" [value]="userRole" disabled class="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" />
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </main>
+</div>

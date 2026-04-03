@@ -44,32 +44,13 @@ public class TransactionService {
     transaction.setStatus(request.getStatus());
     transaction.setCreated_at(new Date());
 
-    // 3. Chuyển đổi DTO sang Entity và tính tổng tiền
+    // 3. Xây dựng details và tính tổng tiền
     long totalSum = 0;
     List<Detail> details = new ArrayList<>();
 
     for (DetailCreationRequest dReq : request.getDetails()) {
-      // Validate từng detail
-      if (dReq.getValue() <= 0) {
-        throw new IllegalArgumentException("Giá trị chi tiết phải lớn hơn 0");
-      }
-      if (dReq.getQuantity() <= 0) {
-        throw new IllegalArgumentException("Số lượng chi tiết phải lớn hơn 0");
-      }
-      if (dReq.getCard_type() < 0) {
-        throw new IllegalArgumentException("Loại thẻ không được để trống");
-      }
-
-      long subTotal = dReq.getValue() * dReq.getQuantity();
-      Detail detail = Detail.builder()
-        .card_type(dReq.getCard_type())
-        .value(dReq.getValue())
-        .quantity(dReq.getQuantity())
-        .sub_total(subTotal) // Tự tính sub_total để đảm bảo chính xác
-        .transaction(transaction) // Gán ngược lại cha
-        .build();
-
-      totalSum += subTotal;
+      Detail detail = buildDetail(dReq, transaction);
+      totalSum += detail.getSub_total();
       details.add(detail);
     }
 
@@ -93,9 +74,64 @@ public class TransactionService {
     long id,
     TransactionCreationRequest request) {
 
-    transactionRepository.deleteById(id);
-    return this.createTransaction(request);
+    Transaction transaction = transactionRepository.findById(id)
+      .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch với ID: " + id));
 
+    if (request.getDetails() == null || request.getDetails().isEmpty()) {
+      throw new IllegalArgumentException("Đơn hàng phải có ít nhất một mặt hàng");
+    }
+
+    detailRepository.deleteByTransactionId(id);
+
+    transaction.setCustomer_phone(request.getCustomer_phone());
+    transaction.setStatus(request.getStatus());
+
+    long totalSum = 0;
+    List<Detail> newDetails = new ArrayList<>();
+
+    for (DetailCreationRequest dReq : request.getDetails()) {
+      Detail detail = buildDetail(dReq, transaction);
+      totalSum += detail.getSub_total();
+      newDetails.add(detail);
+    }
+
+    // 5. Validate total từ frontend với tính toán backend
+    if (request.getTotal() != totalSum) {
+      throw new IllegalArgumentException(
+        "Tổng tiền không khớp. Frontend: " + request.getTotal() +
+        ", Backend: " + totalSum
+      );
+    }
+
+    // 6. Cập nhật tổng tiền và danh sách detail mới
+    transaction.setTotal(totalSum);
+    transaction.setDetails(newDetails);
+
+    return transactionRepository.save(transaction);
+
+  }
+
+  // Helper method: Xây dựng Detail từ DetailCreationRequest
+  private Detail buildDetail(DetailCreationRequest dReq, Transaction transaction) {
+    // Validate từng detail
+    if (dReq.getValue() <= 0) {
+      throw new IllegalArgumentException("Giá trị chi tiết phải lớn hơn 0");
+    }
+    if (dReq.getQuantity() <= 0) {
+      throw new IllegalArgumentException("Số lượng chi tiết phải lớn hơn 0");
+    }
+    if (dReq.getCard_type() < 0) {
+      throw new IllegalArgumentException("Loại thẻ không được để trống");
+    }
+
+    long subTotal = dReq.getValue() * dReq.getQuantity();
+    return Detail.builder()
+      .card_type(dReq.getCard_type())
+      .value(dReq.getValue())
+      .quantity(dReq.getQuantity())
+      .sub_total(subTotal)
+      .transaction(transaction)
+      .build();
   }
   public void deleteTransaction(long id) {
     transactionRepository.deleteById(id);
