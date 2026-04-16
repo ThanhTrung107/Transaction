@@ -1,0 +1,106 @@
+/* PrimeNG Tree Styling */
+:host ::ng-deep .organization-tree {
+	border-radius: 0.75rem;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	padding: 0.5rem;
+	overflow: hidden !important;
+}
+
+:host ::ng-deep .organization-tree .p-tree-container {
+	overflow: hidden !important;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node {
+	padding: 0.25rem 0;
+	position: relative;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-children {
+	padding-left: 2.5rem !important;
+	margin-left: 0 !important;
+	border-left: 2px solid #cbd5e1;
+	position: relative;
+	overflow: hidden !important;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-children .p-tree-node {
+	position: relative;
+	padding-left: 1rem;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-children .p-tree-node::before {
+	content: '';
+	position: absolute;
+	left: -1.3rem;
+	top: 0;
+	width: 1.3rem;
+	height: 2.5rem;
+	border-left: 2px solid #cbd5e1;
+	border-bottom: 2px solid #cbd5e1;
+	border-bottom-left-radius: 4px;
+}
+
+:host ::ng-deep .organization-tree .p-tree-children {
+	margin: 0;
+	padding: 0;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-content {
+	border-radius: 0.5rem;
+	transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+	padding: 0.75rem 0.75rem;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-content:hover {
+	background: #eff6ff;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-content.p-tree-node-selectable.p-tree-node-selected {
+	background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-content.p-tree-node-selectable.p-tree-node-selected span {
+	color: #ffffff;
+}
+
+:host ::ng-deep .organization-tree .p-tree-toggler {
+	margin-right: 0.5rem;
+	color: #64748b;
+	transition: transform 200ms ease;
+}
+
+:host ::ng-deep .organization-tree .p-icon.p-tree-node-toggle-icon {
+	margin-right: 0.5rem;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-content:hover .p-tree-toggler {
+	color: #3b82f6;
+}
+
+:host ::ng-deep .organization-tree .p-tree-node-content:hover i {
+	transform: scale(1.1);
+}
+
+/* PrimeNG Table Styling */
+:host ::ng-deep .staff-table {
+	font-size: 0.875rem;
+	border: none;
+	background: #ffffff;
+}
+
+:host ::ng-deep .staff-table .p-datatable-header {
+	background: #f8fafc;
+	border: none;
+	padding: 0;
+}
+
+:host ::ng-deep .staff-table .p-datatable-tbody > tr {
+	border-bottom: 1px solid #e2e8f0;
+}
+
+:host ::ng-deep .staff-table .p-datatable-tbody > tr:hover {
+	background: #f8fafc;
+}

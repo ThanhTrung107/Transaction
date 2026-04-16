@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { BillComponent } from '../bill/bill.component';
+import { TreeComponent } from '../tree/tree.component';
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, BillComponent],
+  imports: [CommonModule, BillComponent, TreeComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })

@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-100 flex">
+<div class="h-screen bg-gray-100 flex">
   <!-- Sidebar -->
   <aside class="w-40 h-screen sticky top-0 bg-gradient-to-b from-blue-600 to-blue-700 text-white p-6 flex flex-col shadow-lg overflow-y-auto">
     <!-- Logo/Avatar -->
@@ -40,6 +40,16 @@
       </button>
 
       <button
+        (click)="setActiveMenu('tree')"
+        [class.bg-white]="activeMenu === 'tree'"
+        [class.bg-opacity-20]="activeMenu === 'tree'"
+        [class.text-blue-700]="activeMenu === 'tree'"
+        class="w-full text-left px-4 py-2 rounded-md hover:bg-white hover:bg-opacity-10 transition-colors text-sm font-medium"
+      >
+        <i class="pi pi-sitemap mr-2"></i>Cây phòng ban
+      </button>
+
+      <button
         (click)="setActiveMenu('settings')"
         [class.bg-white]="activeMenu === 'settings'"
         [class.bg-opacity-20]="activeMenu === 'settings'"
@@ -60,7 +70,7 @@
   </aside>
 
   <!-- Main Content -->
-  <main class="flex-1 overflow-auto">
+  <main class="flex-1 overflow-hidden flex flex-col">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shadow-sm">
       <div>
@@ -69,19 +79,21 @@
             @case ('overview') { Tổng quan }
             @case ('settings') { Cài đặt }
             @case ('transactions') { Danh sách giao dịch mua sắm }
+            @case ('tree') { Cây phòng ban - nhân viên }
           }
         </h2>
         <p class="text-sm text-gray-500 mt-1">
           @switch (activeMenu) {
             @case ('overview') { Xem tổng quan hệ thống }
             @case ('settings') { Cấu hình hệ thống }
+            @case ('tree') { Xem cấu trúc phòng ban và nhân viên }
           }
         </p>
       </div>
     </header>
 
     <!-- Content Area -->
-    <div class="p-8">
+    <div class="flex-1 overflow-auto p-8">
       @switch (activeMenu) {
         @case ('overview') {
 
@@ -102,6 +114,10 @@
 
         @case ('transactions') {
           <app-bill></app-bill>
+        }
+
+        @case ('tree') {
+          <app-tree></app-tree>
         }
 
         @case ('settings') {

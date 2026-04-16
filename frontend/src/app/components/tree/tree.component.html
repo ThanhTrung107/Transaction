@@ -1,0 +1,209 @@
+<div class="flex flex-col gap-4 h-full">
+	<!-- Tree Section - Scroll với trang chính -->
+	<section class="bg-white rounded-xl shadow-sm p-6">
+		<div class="mb-4 flex items-center justify-between gap-3 pb-4 border-b border-slate-200">
+			<h3 class="text-lg font-semibold text-slate-800">Cây Phòng Ban - Nhân Sự</h3>
+			<div class="flex gap-2">
+				<p-button
+					icon="pi pi-plus"
+					label="Thêm phòng"
+					size="small"
+					severity="success"
+					(onClick)="openCreateDepartmentDialog()"
+				></p-button>
+				<p-button
+					icon="pi pi-refresh"
+					label="Tải lại"
+					size="small"
+					severity="secondary"
+					(onClick)="loadTree()"
+				></p-button>
+			</div>
+		</div>
+
+		@if (loadingTree) {
+			<div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+				<i class="pi pi-spin pi-spinner mr-2"></i>
+				Đang tải dữ liệu...
+			</div>
+		} @else if (errorMessage) {
+			<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{{ errorMessage }}</div>
+		} @else if (!treeNodes.length) {
+			<div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">Không có dữ liệu phòng ban</div>
+		} @else {
+			<div class="rounded-lg">
+				<p-tree
+					[value]="treeNodes"
+					selectionMode="single"
+					[selection]="selectedDepartmentId"
+					(selectionChange)="onNodeSelect($event)"
+					[propagateSelectionDown]="false"
+					[propagateSelectionUp]="false"
+					(onNodeExpand)="onNodeExpand($event)"
+					styleClass="organization-tree w-full"
+				>
+					<ng-template pTemplate="default" let-node>
+						<div 
+							class="flex items-center justify-between gap-2 min-w-0 w-full group cursor-pointer px-3 py-2 rounded-lg transition-colors"
+							[class.bg-blue-500]="node.key === selectedDepartmentNodeKey"
+							[class.text-white]="node.key === selectedDepartmentNodeKey"
+						>
+							<div class="flex-1 min-w-0">
+								<span 
+									class="truncate block font-semibold" 
+									[class.text-slate-900]="node.data?.kind === 'department' && node.key !== selectedDepartmentNodeKey" 
+									[class.text-slate-700]="node.data?.kind === 'staff'"
+									[class.text-white]="node.key === selectedDepartmentNodeKey"
+								>
+									{{ node.label }}
+								</span>
+								@if (node.data?.kind === 'staff' && node.data?.staffTypeName) {
+									<span class="text-xs text-slate-500 block">{{ node.data?.staffTypeName }}</span>
+								}
+							</div>
+							@if (node.data?.kind === 'department') {
+								<div class="flex gap-1" [class.opacity-0]="node.key === selectedDepartmentNodeKey" [class.group-hover:opacity-100]="node.key !== selectedDepartmentNodeKey" [class.opacity-100]="node.key === selectedDepartmentNodeKey" [class.transition-opacity]="node.key !== selectedDepartmentNodeKey">
+									<p-button
+										icon="pi pi-pencil"
+										size="small"
+										[severity]="node.key === selectedDepartmentNodeKey ? 'secondary' : 'info'"
+										text="true"
+										rounded="true"
+										(onClick)="openEditDepartmentDialog(node.data!.departmentId!)"
+									></p-button>
+									<p-button
+										icon="pi pi-trash"
+										size="small"
+										[severity]="node.key === selectedDepartmentNodeKey ? 'secondary' : 'danger'"
+										text="true"
+										rounded="true"
+										(onClick)="deleteDepartment(node.data!.departmentId!, node.label)"
+									></p-button>
+								</div>
+							}
+						</div>
+					</ng-template>
+				</p-tree>
+			</div>
+		}
+	</section>
+
+	<!-- Staff List Section -->
+	<section class="flex-1 flex flex-col bg-white rounded-xl shadow-sm p-6">
+		@if (selectedDepartmentName) {
+			<div class="mb-4 flex items-center justify-between gap-3 pb-4 border-b border-slate-200">
+				<h3 class="text-lg font-semibold text-slate-800">Danh sách nhân viên - {{ selectedDepartmentName }}</h3>
+				<p-button
+					icon="pi pi-plus"
+					label="Thêm nhân viên"
+					size="small"
+					severity="success"
+					(onClick)="openCreateStaffDialog()"
+				></p-button>
+			</div>
+
+			@if (loadingStaff) {
+				<div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+					<i class="pi pi-spin pi-spinner mr-2"></i>
+					Đang tải danh sách...
+				</div>
+			} @else if (staffErrorMessage) {
+				<div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">{{ staffErrorMessage }}</div>
+			} @else if (!staffList.length) {
+				<div class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">Không có nhân viên trong phòng ban này</div>
+			} @else {
+				<div class="rounded-lg border border-slate-200">
+					<p-table
+						[value]="staffList"
+						styleClass="staff-table"
+						responsiveLayout="scroll"
+						[scrollable]="true"
+						scrollHeight="400px"
+					>
+						<ng-template pTemplate="header">
+							<tr>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Mã</th>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Tên</th>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Loại</th>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Email</th>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Số ĐT</th>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Địa Chỉ</th>
+								<th class="bg-blue-600 text-white font-semibold text-left px-4 py-3">Ngày Sinh</th>
+								<th class="bg-blue-600 text-white font-semibold text-center px-4 py-3">Hành Động</th>
+							</tr>
+						</ng-template>
+						<ng-template pTemplate="body" let-staff let-even="even">
+							<tr [class.bg-slate-50]="even" class="border-b border-slate-200 hover:bg-blue-50 transition-colors">
+								<td class="px-4 py-3 text-slate-700 font-medium">{{ staff.staffCode }}</td>
+								<td class="px-4 py-3 text-slate-700 font-medium">{{ staff.staffName }}</td>
+								<td class="px-4 py-3">
+									<span class="px-2 py-1 rounded text-xs font-medium inline-block" [ngClass]="getStaffTypeClass(staff.staffType)">
+										{{ staff.staffTypeName }}
+									</span>
+								</td>
+								<td class="px-4 py-3 text-slate-700 text-sm">{{ staff.email }}</td>
+								<td class="px-4 py-3 text-slate-700 text-sm">{{ staff.phoneNumber }}</td>
+								<td class="px-4 py-3 text-slate-700 text-sm">{{ staff.address || 'N/A' }}</td>
+								<td class="px-4 py-3 text-slate-700 text-sm">{{ staff.birthDay ? (staff.birthDay | date: 'dd/MM/yyyy') : 'N/A' }}</td>
+								<td class="px-4 py-3 text-center">
+									<div class="flex gap-1 justify-center">
+										<p-button
+											icon="pi pi-pencil"
+											size="small"
+											severity="info"
+											text="true"
+											rounded="true"
+											(onClick)="openEditStaffDialog(staff)"
+										></p-button>
+										<p-button
+											icon="pi pi-trash"
+											size="small"
+											severity="danger"
+											text="true"
+											rounded="true"
+											(onClick)="deleteStaff(staff.staffId ?? staff.id, staff.staffName)"
+										></p-button>
+									</div>
+								</td>
+							</tr>
+						</ng-template>
+					</p-table>
+				</div>
+			}
+		} @else {
+			<div class="rounded-lg border border-slate-200 bg-blue-50 p-8 text-center flex items-center justify-center">
+				<div>
+					<i class="pi pi-inbox text-4xl text-blue-400 mb-3 block"></i>
+					<p class="text-slate-700 font-medium">Vui lòng chọn một phòng ban để xem danh sách nhân viên</p>
+				</div>
+			</div>
+		}
+	</section>
+</div>
+
+<!-- Dialogs -->
+<app-department-dialog
+	[display]="showDepartmentDialog"
+	[isEdit]="isEditingDepartment"
+	[parentDepartments]="parentDepartments"
+	[selectedDepartmentId]="editingDepartmentId"
+	(displayChange)="showDepartmentDialog = $event"
+	(onSave)="onDepartmentSaved($event)"
+></app-department-dialog>
+
+<app-staff-dialog
+	[display]="showStaffDialog"
+	[isEdit]="isEditingStaff"
+	[departmentId]="selectedDepartmentId"
+	[selectedStaffId]="selectedStaffId"
+	(displayChange)="showStaffDialog = $event"
+	(onSave)="onStaffSaved($event)"
+></app-staff-dialog>
+
+<app-confirm-delete-dialog
+	[display]="showConfirmDelete"
+	[message]="deleteMessage"
+	[isDeleting]="isDeleting"
+	(displayChange)="showConfirmDelete = $event"
+	(onConfirmed)="onDeleteConfirmed()"
+></app-confirm-delete-dialog>
