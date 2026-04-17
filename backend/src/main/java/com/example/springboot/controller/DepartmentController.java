@@ -1,25 +1,16 @@
 package com.example.springboot.controller;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.example.springboot.dto.DepartmentTree;
 import com.example.springboot.dto.StaffCreation;
 import com.example.springboot.entity.Department;
 import com.example.springboot.service.DepartmentService;
 import com.example.springboot.service.StaffService;
-
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/departments")
@@ -45,14 +36,9 @@ public class DepartmentController {
   @GetMapping("/{id}/info")
   public ResponseEntity<Department> getDepartmentById(@PathVariable Long id) {
     Department department = departmentService.getDepartmentbyID(id);
-    // Xóa circular reference để tránh infinite loop serialization
-    if (department != null) {
-      department.setParent(null);
-      department.setChildren(null);
-      department.setStaffList(null);
-    }
     return ResponseEntity.ok(department);
   }
+
   @PostMapping
   public DepartmentTree createDepartment(@RequestBody @Valid DepartmentTree request) {
     Department saved = departmentService.createDepartment(request);

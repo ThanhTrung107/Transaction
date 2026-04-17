@@ -1,11 +1,12 @@
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CalendarModule } from 'primeng/calendar';
-import { StaffService, StaffCreation } from '../../services/staff.service';
+import { StaffService, StaffCreation, StaffType } from '../../services/staff.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-staff-dialog',
@@ -59,93 +60,121 @@ import { StaffService, StaffCreation } from '../../services/staff.service';
           <span class="font-semibold">Gợi ý:</span> Chọn đúng vai trò nhân viên để hệ thống phân quyền phù hợp.
         </div>
 
-        <form (ngSubmit)="onSubmit()" autocomplete="on">
+        <form #staffForm="ngForm" (ngSubmit)="onSubmit()" autocomplete="on">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <!-- Staff Code -->
             <div>
-              <label for="staffCode" class="mb-1 block text-sm font-semibold text-slate-700">Mã Nhân Viên</label>
+              <label for="staffCode" class="mb-1 block text-sm font-semibold text-slate-700">Mã Nhân Viên <span class="text-red-500">*</span></label>
               <input 
                 id="staffCode"
                 type="text"
                 [(ngModel)]="formData.staffCode" 
-                name="staffCode" 
+                name="staffCode"
+                #staffCodeField="ngModel"
+                required
+                maxlength="50"
                 autocomplete="off"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
                 placeholder="VD: EMP001" />
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['staffCode']">{{ errors['staffCode'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="staffCodeField?.touched && staffCodeField?.invalid">
+                {{ staffCodeField?.errors?.['required'] ? 'Mã nhân viên không được để trống' : 'Không vượt quá 50 ký tự' }}
+              </span>
             </div>
 
             <!-- Staff Name -->
             <div>
-              <label for="staffName" class="mb-1 block text-sm font-semibold text-slate-700">Tên Nhân Viên</label>
+              <label for="staffName" class="mb-1 block text-sm font-semibold text-slate-700">Tên Nhân Viên <span class="text-red-500">*</span></label>
               <input 
                 id="staffName"
                 type="text"
                 [(ngModel)]="formData.staffName" 
-                name="staffName" 
+                name="staffName"
+                #staffNameField="ngModel"
+                required
+                maxlength="100"
                 autocomplete="name"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
                 placeholder="VD: Nguyễn Văn A" />
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['staffName']">{{ errors['staffName'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="staffNameField?.touched && staffNameField?.invalid">
+                {{ staffNameField?.errors?.['required'] ? 'Tên nhân viên không được để trống' : 'Không vượt quá 100 ký tự' }}
+              </span>
             </div>
 
             <!-- Staff Type -->
             <div>
-              <label for="staffType" class="mb-1 block text-sm font-semibold text-slate-700">Loại Nhân Viên</label>
+              <label for="staffType" class="mb-1 block text-sm font-semibold text-slate-700">Loại Nhân Viên <span class="text-red-500">*</span></label>
               <select
                 id="staffType"
                 [(ngModel)]="formData.staffType" 
-                name="staffType" 
+                name="staffType"
+                #staffTypeField="ngModel"
+                required
                 autocomplete="off"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
               >
                 <option value="">-- Chọn vai trò --</option>
-                <option *ngFor="let role of staffTypeOptions" [ngValue]="role.value">{{ role.label }}</option>
+                <option *ngFor="let role of staffTypeOptions" [ngValue]="role.parValue">{{ role.parName }}</option>
               </select>
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['staffType']">{{ errors['staffType'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="staffTypeField?.touched && staffTypeField?.invalid">
+                Loại nhân viên không được để trống
+              </span>
             </div>
 
             <!-- Email -->
             <div>
-              <label for="email" class="mb-1 block text-sm font-semibold text-slate-700">Email</label>
+              <label for="email" class="mb-1 block text-sm font-semibold text-slate-700">Email <span class="text-red-500">*</span></label>
               <input 
                 id="email"
                 type="email" 
                 [(ngModel)]="formData.email" 
-                name="email" 
+                name="email"
+                #emailField="ngModel"
+                required
+                maxlength="50"
                 autocomplete="email"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
                 placeholder="email@example.com" />
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['email']">{{ errors['email'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="emailField?.touched && emailField?.invalid">
+                {{ emailField?.errors?.['required'] ? 'Email không được để trống' : (emailField?.errors?.['email'] ? 'Email không hợp lệ' : 'Không vượt quá 50 ký tự') }}
+              </span>
             </div>
 
             <!-- ID Number -->
             <div>
-              <label for="idNumber" class="mb-1 block text-sm font-semibold text-slate-700">Số CMND/CCCD</label>
+              <label for="idNumber" class="mb-1 block text-sm font-semibold text-slate-700">Số CMND/CCCD <span class="text-red-500">*</span></label>
               <input 
                 id="idNumber"
                 type="text"
                 [(ngModel)]="formData.idNumber" 
-                name="idNumber" 
+                name="idNumber"
+                #idNumberField="ngModel"
+                required
+                maxlength="12"
                 autocomplete="off"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
                 placeholder="VD: 123456789" />
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['idNumber']">{{ errors['idNumber'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="idNumberField?.touched && idNumberField?.invalid">
+                {{ idNumberField?.errors?.['required'] ? 'Số CMND/CCCD không được để trống' : 'Không vượt quá 12 ký tự' }}
+              </span>
             </div>
 
             <!-- Phone Number -->
             <div>
-              <label for="phoneNumber" class="mb-1 block text-sm font-semibold text-slate-700">Số Điện Thoại</label>
+              <label for="phoneNumber" class="mb-1 block text-sm font-semibold text-slate-700">Số Điện Thoại <span class="text-red-500">*</span></label>
               <input 
                 id="phoneNumber"
                 type="tel"
                 [(ngModel)]="formData.phoneNumber" 
-                name="phoneNumber" 
-                autocomplete="tel-national"
+                name="phoneNumber"
+                #phoneNumberField="ngModel"
+                required
                 maxlength="10"
+                autocomplete="tel-national"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100" 
                 placeholder="0123456789" />
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['phoneNumber']">{{ errors['phoneNumber'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="phoneNumberField?.touched && phoneNumberField?.invalid">
+                {{ phoneNumberField?.errors?.['required'] ? 'Số điện thoại không được để trống' : 'Số điện thoại phải đúng 10 chữ số' }}
+              </span>
             </div>
 
             <!-- Address -->
@@ -172,16 +201,21 @@ import { StaffService, StaffCreation } from '../../services/staff.service';
 
             <!-- Status -->
             <div>
-              <label for="status" class="mb-1 block text-sm font-semibold text-slate-700">Trạng Thái</label>
+              <label for="status" class="mb-1 block text-sm font-semibold text-slate-700">Trạng Thái <span class="text-red-500">*</span></label>
               <input 
                 id="status"
                 type="text"
                 [(ngModel)]="formData.status" 
-                name="status" 
+                name="status"
+                #statusField="ngModel"
+                required
+                maxlength="1"
                 autocomplete="off"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
                 placeholder="Nhập trạng thái" />
-              <span class="text-red-500 text-xs mt-1 block" *ngIf="errors['status']">{{ errors['status'] }}</span>
+              <span class="text-red-500 text-xs mt-1 block" *ngIf="statusField?.touched && statusField?.invalid">
+                Trạng thái không được để trống
+              </span>
             </div>
 
             <!-- Description -->
@@ -191,10 +225,12 @@ import { StaffService, StaffCreation } from '../../services/staff.service';
                 id="desciption"
                 [(ngModel)]="formData.desciption" 
                 name="desciption"
+                maxlength="2000"
                 autocomplete="off"
                 class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-slate-800 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-2 focus:ring-cyan-100"
                 rows="2" 
                 placeholder="Nhập mô tả (tùy chọn)"></textarea>
+              <div class="text-xs text-slate-500 mt-1">{{ (formData.desciption?.length || 0) }}/2000</div>
             </div>
           </div>
 
@@ -213,8 +249,10 @@ import { StaffService, StaffCreation } from '../../services/staff.service';
             Hủy
           </button>
           <button 
-            class="rounded-lg bg-cyan-700 px-4 py-2 font-semibold text-white transition hover:bg-cyan-800"
-            (click)="onSubmit()">
+            type="submit"
+            (click)="onSubmit()"
+            [disabled]="isSubmitting"
+            class="rounded-lg bg-cyan-700 px-4 py-2 font-semibold text-white transition hover:bg-cyan-800 disabled:bg-slate-400 disabled:cursor-not-allowed">
             {{ isEdit ? 'Cập nhật' : 'Tạo mới' }}
           </button>
         </div>
@@ -227,16 +265,10 @@ export class StaffDialogComponent implements OnChanges {
   @Input() isEdit = false;
   @Input() selectedStaffId: number | null = null;
   @Input() departmentId: number | null = null;
+  @Input() staffTypeOptions: StaffType[] = [];
   @Output() displayChange = new EventEmitter<boolean>();
   @Output() onSave = new EventEmitter<StaffCreation>();
-
-  readonly staffTypeOptions = [
-    { label: 'Nhân viên', value: '1' },
-    { label: 'Trưởng phòng', value: '2' },
-    { label: 'Phó phòng', value: '3' },
-    { label: 'Giám đốc', value: '4' },
-    { label: 'P.Giám đốc', value: '5' }
-  ];
+  @ViewChild('staffForm') staffForm!: NgForm;
 
   formData: StaffCreation = {
     staffCode: '',
@@ -252,11 +284,13 @@ export class StaffDialogComponent implements OnChanges {
     birthDay: undefined
   };
 
-  errors: { [key: string]: string } = {};
   errorMessage = '';
   isSubmitting = false;
 
-  constructor(private staffService: StaffService) {}
+  constructor(
+    private staffService: StaffService,
+    private notificationService: NotificationService
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.display) {
@@ -286,7 +320,6 @@ export class StaffDialogComponent implements OnChanges {
 
   private initializeDialogData(): void {
     this.resetForm();
-    this.errors = {};
     this.errorMessage = '';
 
     if (this.isEdit && this.selectedStaffId) {
@@ -316,18 +349,31 @@ export class StaffDialogComponent implements OnChanges {
   }
 
   onSubmit(): void {
-    if (!this.validate()) {
+    if (!this.staffForm?.valid) {
+      this.markFormGroupTouched(this.staffForm);
       return;
     }
 
     this.isSubmitting = true;
-    const request = this.isEdit && this.selectedStaffId
-      ? this.staffService.updateStaff(this.selectedStaffId, this.formData)
-      : this.staffService.createStaff(this.departmentId!, this.formData);
+
+    // Remove staffId form old properties, guarantee depId and Id correctness
+    if (this.isEdit && this.selectedStaffId) {
+      this.formData.id = this.selectedStaffId;
+    } else {
+      this.formData.id = undefined;
+    }
+    
+    this.formData.depId = this.departmentId!;
+
+    const request = this.staffService.saveStaff(this.formData);
 
     request.subscribe({
       next: (result) => {
         this.isSubmitting = false;
+        const message = this.isEdit 
+          ? 'Cập nhật nhân viên thành công' 
+          : 'Tạo nhân viên thành công';
+        this.notificationService.showSuccess(message);
         this.onSave.emit(result);
         this.displayChange.emit(false);
       },
@@ -346,64 +392,6 @@ export class StaffDialogComponent implements OnChanges {
     this.displayChange.emit(false);
   }
 
-  private validate(): boolean {
-    this.errors = {};
-
-    if (!this.formData.staffCode || this.formData.staffCode.trim() === '') {
-      this.errors['staffCode'] = 'Mã nhân viên không được để trống';
-    } else if (this.formData.staffCode.length > 50) {
-      this.errors['staffCode'] = 'Mã nhân viên không được vượt quá 50 ký tự';
-    }
-
-    if (!this.formData.staffName || this.formData.staffName.trim() === '') {
-      this.errors['staffName'] = 'Tên nhân viên không được để trống';
-    } else if (this.formData.staffName.length > 100) {
-      this.errors['staffName'] = 'Tên nhân viên không được vượt quá 100 ký tự';
-    }
-
-    if (!this.formData.staffType || this.formData.staffType.trim() === '') {
-      this.errors['staffType'] = 'Loại nhân viên không được để trống';
-    } else if (this.formData.staffType.length > 1) {
-      this.errors['staffType'] = 'Loại nhân viên chỉ có 1 ký tự';
-    }
-
-    if (!this.formData.email || this.formData.email.trim() === '') {
-      this.errors['email'] = 'Email không được để trống';
-    } else if (this.formData.email.length > 50) {
-      this.errors['email'] = 'Email không được vượt quá 50 ký tự';
-    } else if (!this.isValidEmail(this.formData.email)) {
-      this.errors['email'] = 'Email không hợp lệ';
-    }
-
-    if (!this.formData.idNumber || this.formData.idNumber.trim() === '') {
-      this.errors['idNumber'] = 'Số CMND/CCCD không được để trống';
-    } else if (this.formData.idNumber.length > 20) {
-      this.errors['idNumber'] = 'Số CMND/CCCD không được vượt quá 20 ký tự';
-    }
-
-    if (!this.formData.phoneNumber || this.formData.phoneNumber.trim() === '') {
-      this.errors['phoneNumber'] = 'Số điện thoại không được để trống';
-    } else if (!this.isValidPhone(this.formData.phoneNumber)) {
-      this.errors['phoneNumber'] = 'Số điện thoại phải đúng 10 chữ số';
-    }
-
-    if (!this.formData.status || this.formData.status.trim() === '') {
-      this.errors['status'] = 'Trạng thái không được để trống';
-    }
-
-    return Object.keys(this.errors).length === 0;
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  private isValidPhone(phone: string): boolean {
-    const phoneRegex = /^0\d{9}$/;
-    return phoneRegex.test(phone.replace(/\D/g, ''));
-  }
-
   private resetForm(): void {
     this.formData = {
       staffCode: '',
@@ -418,7 +406,13 @@ export class StaffDialogComponent implements OnChanges {
       status: '1',
       birthDay: undefined
     };
-    this.errors = {};
     this.errorMessage = '';
+  }
+
+  private markFormGroupTouched(formGroup: NgForm): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.controls[key];
+      control?.markAsTouched();
+    });
   }
 }

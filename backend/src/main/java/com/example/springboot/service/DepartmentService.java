@@ -1,34 +1,28 @@
 package com.example.springboot.service;
 
+import com.example.springboot.dto.DepartmentTree;
+import com.example.springboot.entity.Department;
+import com.example.springboot.repository.DepartmentRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.example.springboot.dto.DepartmentTree;
-import com.example.springboot.entity.Department;
-import com.example.springboot.repository.DepartmentRepository;
-import com.example.springboot.repository.StaffRepository;
-
-import jakarta.transaction.Transactional;
-
 @Service
 public class DepartmentService {
   @Autowired
   private DepartmentRepository departmentRepo;
-  private StaffRepository staffRepo;
+
+  //  private StaffRepository staffRepo;
   public List<DepartmentTree> getTree() {
     List<Department> all = departmentRepo.findByStatus("1");
 
     // Flat list → Map (dùng ID để match với parentId)
-    Map<Long, DepartmentTree> map = all.stream()
-      .collect(Collectors.toMap(
-        Department::getId,
-        d -> new DepartmentTree(d.getId(), d.getCode(), d.getName(), d.getParentId())
-      ));
+    Map<Long, DepartmentTree> map = all.stream().collect(Collectors.toMap(Department::getId, d -> new DepartmentTree(d.getId(), d.getCode(), d.getName(), d.getParentId())));
 
     List<DepartmentTree> roots = new ArrayList<>();
     map.values().forEach(node -> {
@@ -42,23 +36,21 @@ public class DepartmentService {
   }
 
   public Department getDepartmentbyID(long id) {
-    return departmentRepo.findById(id)
-      .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng ban với ID: " + id));
+    return departmentRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phòng ban với ID: " + id));
   }
 
   @Transactional
   public Department createDepartment(DepartmentTree request) {
-    
-    //  Kiểm tra code không trùng
-    departmentRepo.findByCode(request.getCode())
-      .ifPresent(d -> {
-        throw new RuntimeException("Code '" + request.getCode() + "' đã tồn tại");
-      });
+    if (departmentRepo.existsByCode(request.getCode())) {
+      throw new RuntimeException("Mã phòng ban '" + request.getCode() + "' đã tồn tại");
+    }
+    if (departmentRepo.existsByName(request.getName())) {
+      throw new RuntimeException("Tên phòng ban '" + request.getName() + "' đã tồn tại");
+    }
 
     // Kiểm tra parentId có tồn tại không (nếu có parent)
     if (request.getParentId() != null && request.getParentId() != 0) {
-      Department parentDept = departmentRepo.findById(request.getParentId())
-        .orElseThrow(() -> new RuntimeException("Phòng ban cha ID " + request.getParentId() + " không tồn tại"));
+      Department parentDept = departmentRepo.findById(request.getParentId()).orElseThrow(() -> new RuntimeException("Phòng ban cha ID " + request.getParentId() + " không tồn tại"));
 
       //  Kiểm tra phòng ban cha có hoạt động không
       if (!"1".equals(parentDept.getStatus())) {
@@ -77,12 +69,16 @@ public class DepartmentService {
   }
 
   @Transactional
-  public Department updateDepartment(
-    long id,
-    DepartmentTree request) {
+  public Department updateDepartment(long id, DepartmentTree request) {
 
-    Department department = departmentRepo.findById(id)
-      .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng ban với ID: " + id));
+    Department department = departmentRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phòng ban với ID: " + id));
+
+    if (departmentRepo.existsByCodeAndIdNot(request.getCode(), id)) {
+      throw new RuntimeException("Mã phòng ban '" + request.getCode() + "' đã được sử dụng bởi phòng ban khác");
+    }
+    if (departmentRepo.existsByNameAndIdNot(request.getName(), id)) {
+      throw new RuntimeException("Tên phòng ban '" + request.getName() + "' đã được sử dụng bởi phòng ban khác");
+    }
 
     // Kiểm tra circular reference
     if (request.getParentId() != null && request.getParentId() != 0) {
@@ -91,8 +87,7 @@ public class DepartmentService {
 
     //Kiểm tra parentId có tồn tại không
     if (request.getParentId() != null && request.getParentId() != 0) {
-      Department parentDept = departmentRepo.findById(request.getParentId())
-        .orElseThrow(() -> new RuntimeException("Phòng ban cha ID " + request.getParentId() + " không tồn tại"));
+      Department parentDept = departmentRepo.findById(request.getParentId()).orElseThrow(() -> new RuntimeException("Phòng ban cha ID " + request.getParentId() + " không tồn tại"));
 
       // Kiểm tra phòng ban cha có hoạt động không
       if (!"1".equals(parentDept.getStatus())) {
@@ -100,13 +95,6 @@ public class DepartmentService {
       }
     }
 
-    //  Kiểm tra code không trùng (nếu thay đổi)
-    if (!department.getCode().equals(request.getCode())) {
-      departmentRepo.findByCode(request.getCode())
-        .ifPresent(d -> {
-          throw new RuntimeException("Code '" + request.getCode() + "' đã tồn tại");
-        });
-    }
     department.setCode(request.getCode());
     department.setName(request.getName());
     department.setParentId(request.getParentId());
@@ -117,7 +105,7 @@ public class DepartmentService {
     return saved;
   }
 
-  
+
   private void validateCircularReference(long departmentId, long newParentId) {
     Long currentParentId = newParentId;
     int depth = 0;
@@ -125,9 +113,7 @@ public class DepartmentService {
 
     while (currentParentId != null && currentParentId != 0 && depth < maxDepth) {
       if (currentParentId == departmentId) {
-        throw new RuntimeException(
-          "Không thể gắn phòng ban vào chính nó hoặc phòng ban con của nó (circular reference)"
-        );
+        throw new RuntimeException("Không thể gắn phòng ban vào chính nó hoặc phòng ban con của nó (circular reference)");
       }
 
       Department parent = departmentRepo.findById(currentParentId).orElse(null);

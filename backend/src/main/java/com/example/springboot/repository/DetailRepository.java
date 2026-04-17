@@ -17,11 +17,8 @@ public interface DetailRepository extends JpaRepository<Detail, Long> {
   List<Detail> findByTransaction_Id(long transactionID);
 
   @Query("SELECT d FROM Detail d WHERE d.transaction = :transaction AND d.card_type = :cardType AND d.value = :value")
-  Optional<Detail> findDuplicateDetail(
-    @Param("transaction") Transaction transaction,
-    @Param("cardType") long cardType,
-    @Param("value") long value
-  );
+  Optional<Detail> findDuplicateDetail(@Param("transaction") Transaction transaction, @Param("cardType") long cardType, @Param("value") long value);
+
   @Modifying
   @Transactional
   @Query("DELETE FROM Detail d WHERE d.transaction.id = :transactionId")

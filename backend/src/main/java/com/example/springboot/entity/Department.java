@@ -1,5 +1,6 @@
 package com.example.springboot.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,14 +36,17 @@ public class Department {
   private String description;
 
   // Quan hệ cha - con
+  @JsonIgnore
   @ManyToOne
   @JoinColumn(name = "PARENT_ID", insertable = false, updatable = false)
   private Department parent;
 
+  @JsonIgnore
   @OneToMany(mappedBy = "parent")
   private List<Department> children;
 
   // Quan hệ với Staff
+  @JsonIgnore
   @OneToMany(mappedBy = "department")
   private List<Staff> staffList;
 }

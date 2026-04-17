@@ -2,6 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface StaffType {
+  parValue: string;
+  parName: string;
+}
+
 export interface StaffCreation {
   id?: number;
   staffId?: number;
@@ -27,6 +32,10 @@ export class StaffService {
 
   constructor(private http: HttpClient) {}
 
+  getStaffTypes(): Observable<StaffType[]> {
+    return this.http.get<StaffType[]>(`${this.apiUrl}/position`);
+  }
+
   getStaffByDepartment(depId: number): Observable<StaffCreation[]> {
     return this.http.get<StaffCreation[]>(`http://localhost:8080/departments/${depId}/staffs`);
   }
@@ -35,12 +44,8 @@ export class StaffService {
     return this.http.get<StaffCreation>(`${this.apiUrl}/${staffId}/info`);
   }
 
-  createStaff(departmentId: number, data: StaffCreation): Observable<StaffCreation> {
-    return this.http.post<StaffCreation>(`${this.apiUrl}/${departmentId}`, data);
-  }
-
-  updateStaff(staffId: number, data: StaffCreation): Observable<StaffCreation> {
-    return this.http.put<StaffCreation>(`${this.apiUrl}/${staffId}`, data);
+  saveStaff(data: StaffCreation): Observable<StaffCreation> {
+    return this.http.post<StaffCreation>(`${this.apiUrl}/save`, data);
   }
 
   deleteStaff(staffId: number): Observable<void> {

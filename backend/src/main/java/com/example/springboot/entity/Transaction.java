@@ -18,12 +18,16 @@ import java.util.List;
 public class Transaction {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "ID")
   private long id;
-  private String customer_phone;
+  @Column(name = "CUSTOMER_PHONE")
+  private String customerPhone;
+  @Column(name = "TOTAL")
   private long total;
+  @Column(name = "STATUS")
   private long status;
   @Column(name = "CREATED_AT")
-  private Date created_at;
+  private Date createdAt;
 
   @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
   @NotEmpty(message = "Giao dịch phải có ít nhất một mặt hàng chi tiết")

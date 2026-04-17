@@ -1,18 +1,18 @@
 package com.example.springboot.service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import com.example.springboot.dto.ApParamRequest;
 import com.example.springboot.dto.StaffCreation;
 import com.example.springboot.entity.ApParam;
 import com.example.springboot.entity.Department;
 import com.example.springboot.entity.Staff;
 import com.example.springboot.repository.ApParamRepository;
 import com.example.springboot.repository.StaffRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -25,62 +25,59 @@ public class StaffService {
   @Autowired
   private DepartmentService departmentService;
 
-  public List<StaffCreation> getByDepartment(long depId){
-    List<Staff> allStaff = staffRepo.findByDepIdAndStatus(depId, "1");
-
-    Map<String, String> staffTypeLookup = apParamRepo.findById_ParType("STAFF_TYPE")
-      .stream()
-      .collect(Collectors.toMap(
-        ap -> ap.getId().getParValue(),
-        ApParam::getParName,
-        (existing, replacement) -> existing
-      ));
-
-    return allStaff.stream()
-      .map(staff -> StaffCreation.builder()
-        .id(staff.getId())
-        .staffCode(staff.getStaffCode())
-        .staffName(staff.getStaffName())
-        .staffType(staff.getStaffType())
-        .staffTypeName(staffTypeLookup.getOrDefault(staff.getStaffType(), staff.getStaffType()))
-        .depId(staff.getDepId())
-        .email(staff.getEmail())
-        .address(staff.getAddress())
-        .phoneNumber(staff.getPhoneNumber())
-        .birthDay(staff.getBirthDay())
-        .build())
-      .collect(Collectors.toList());
+  public List<ApParamRequest> getAllPositions() {
+    return apParamRepo.findById_ParType("STAFF_TYPE").stream().map(ap -> ApParamRequest.builder().parValue(ap.getId().getParValue()).parName(ap.getParName()).build()).collect(Collectors.toList());
   }
 
-  public Staff getStaffByID(long id){
-    return staffRepo.findById(id)
-      .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
+  public List<StaffCreation> getByDepartment(long depId) {
+    List<Staff> allStaff = staffRepo.findByDepIdAndStatus(depId, "1");
+
+    Map<String, String> staffTypeLookup = apParamRepo.findById_ParType("STAFF_TYPE").stream().collect(Collectors.toMap(ap -> ap.getId().getParValue(), ApParam::getParName, (existing, replacement) -> existing));
+
+    return allStaff.stream().map(staff -> StaffCreation.builder().id(staff.getId()).staffCode(staff.getStaffCode()).staffName(staff.getStaffName()).staffType(staff.getStaffType()).staffTypeName(staffTypeLookup.getOrDefault(staff.getStaffType(), staff.getStaffType())).depId(staff.getDepId()).email(staff.getEmail()).address(staff.getAddress()).phoneNumber(staff.getPhoneNumber()).birthDay(staff.getBirthDay()).build()).collect(Collectors.toList());
+  }
+
+  public Staff getStaffByID(long id) {
+    return staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
   }
 
   public Staff createStaff(long departmentID, StaffCreation request) {
+    if (staffRepo.existsByStaffCode(request.getStaffCode())) {
+      throw new RuntimeException("Mã nhân viên '" + request.getStaffCode() + "' đã tồn tại");
+    }
+    if (staffRepo.existsByEmail(request.getEmail())) {
+      throw new RuntimeException("Email '" + request.getEmail() + "' đã tồn tại");
+    }
+    if (staffRepo.existsByPhoneNumber(request.getPhoneNumber())) {
+      throw new RuntimeException("Số điện thoại '" + request.getPhoneNumber() + "' đã tồn tại");
+    }
+    if (staffRepo.existsByIdNumber(request.getIdNumber())) {
+      throw new RuntimeException("Số CCCD '" + request.getIdNumber() + "' đã tồn tại");
+    }
+
     Department department = departmentService.getDepartmentbyID(departmentID);
 
-    Staff staff = Staff.builder()
-      .department(department)
-      .depId(department.getId())  // Set depId explicitly
-      .staffName(request.getStaffName())
-      .staffCode(request.getStaffCode())
-      .staffType(request.getStaffType())
-      .email(request.getEmail())
-      .phoneNumber(request.getPhoneNumber())
-      .address(request.getAddress())
-      .description(request.getDesciption())
-      .idNumber(request.getIdNumber())
-      .status(request.getStatus())
-      .birthDay(request.getBirthDay())
-      .build();
+    Staff staff = Staff.builder().department(department).depId(department.getId())  // Set depId explicitly
+      .staffName(request.getStaffName()).staffCode(request.getStaffCode()).staffType(request.getStaffType()).email(request.getEmail()).phoneNumber(request.getPhoneNumber()).address(request.getAddress()).description(request.getDesciption()).idNumber(request.getIdNumber()).status(request.getStatus()).birthDay(request.getBirthDay()).build();
 
     return staffRepo.save(staff);
   }
 
-  public Staff updateStaff(long staffId, StaffCreation request){
-    Staff staff = staffRepo.findById(staffId)
-      .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + staffId));
+  public Staff updateStaff(long staffId, StaffCreation request) {
+    Staff staff = staffRepo.findById(staffId).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + staffId));
+
+    if (staffRepo.existsByStaffCodeAndIdNot(request.getStaffCode(), staffId)) {
+      throw new RuntimeException("Mã nhân viên '" + request.getStaffCode() + "' đã được sử dụng bởi nhân viên khác");
+    }
+    if (staffRepo.existsByEmailAndIdNot(request.getEmail(), staffId)) {
+      throw new RuntimeException("Email '" + request.getEmail() + "' đã được sử dụng bởi nhân viên khác");
+    }
+    if (staffRepo.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), staffId)) {
+      throw new RuntimeException("Số điện thoại '" + request.getPhoneNumber() + "' đã được sử dụng bởi nhân viên khác");
+    }
+    if (staffRepo.existsByIdNumberAndIdNot(request.getIdNumber(), staffId)) {
+      throw new RuntimeException("Số CCCD '" + request.getIdNumber() + "' đã được sử dụng bởi nhân viên khác");
+    }
 
     staff.setStaffName(request.getStaffName());
     staff.setStaffCode(request.getStaffCode());
@@ -96,25 +93,22 @@ public class StaffService {
     return staffRepo.save(staff);
   }
 
+  public Staff saveStaff(StaffCreation request) {
+    if (request.getId() == null || request.getId() == 0) {
+      // Create
+      return createStaff(request.getDepId(), request);
+    } else {
+      // Update
+      return updateStaff(request.getId(), request);
+    }
+  }
+
   public void deleteStaff(long staffId) {
     staffRepo.deleteById(staffId);
   }
 
   // Helper method to convert Staff entity to DTO (tránh circular reference)
   public StaffCreation convertToDTO(Staff staff) {
-    return StaffCreation.builder()
-      .id(staff.getId())
-      .staffCode(staff.getStaffCode())
-      .staffName(staff.getStaffName())
-      .staffType(staff.getStaffType())
-      .depId(staff.getDepId())
-      .email(staff.getEmail())
-      .idNumber(staff.getIdNumber())
-      .phoneNumber(staff.getPhoneNumber())
-      .address(staff.getAddress())
-      .desciption(staff.getDescription())
-      .status(staff.getStatus())
-      .birthDay(staff.getBirthDay())
-      .build();
+    return StaffCreation.builder().id(staff.getId()).staffCode(staff.getStaffCode()).staffName(staff.getStaffName()).staffType(staff.getStaffType()).depId(staff.getDepId()).email(staff.getEmail()).idNumber(staff.getIdNumber()).phoneNumber(staff.getPhoneNumber()).address(staff.getAddress()).desciption(staff.getDescription()).status(staff.getStatus()).birthDay(staff.getBirthDay()).build();
   }
 }

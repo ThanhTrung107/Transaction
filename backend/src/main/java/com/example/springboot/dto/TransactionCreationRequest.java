@@ -15,7 +15,7 @@ import java.util.List;
 public class TransactionCreationRequest {
   @Pattern(regexp = "^0\\d{9}$", message = "Số điện thoại phải đúng 10 chữ số")
   @NotBlank(message = "Số điện thoại không được để trống")
-  private String customer_phone;
+  private String customerPhone;
   @NotNull(message = "Trạng thái không được để trống")
   private long status;
   @NotEmpty(message = "Đơn hàng phải có ít nhất một mặt hàng")

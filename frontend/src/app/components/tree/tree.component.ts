@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { DepartmentService, DepartmentTree } from '../../services/department.service';
-import { StaffService, StaffCreation } from '../../services/staff.service';
+import { StaffService, StaffCreation, StaffType } from '../../services/staff.service';
 import { DepartmentDialogComponent } from '../dialogs/department-dialog.component';
 import { StaffDialogComponent } from '../dialogs/staff-dialog.component';
 import { ConfirmDeleteDialogComponent } from '../dialogs/confirm-delete.component';
@@ -78,6 +78,7 @@ export class TreeComponent implements OnInit {
   showStaffDialog = false;
   isEditingStaff = false;
   selectedStaffId: number | null = null;
+  staffTypeOptions: StaffType[] = [];
 
   // Delete Confirmation
   showConfirmDelete = false;
@@ -94,6 +95,18 @@ export class TreeComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadTree();
+    this.loadStaffTypes();
+  }
+
+  private loadStaffTypes(): void {
+    this.staffService.getStaffTypes().subscribe({
+      next: (types) => {
+        this.staffTypeOptions = types;
+      },
+      error: (error) => {
+        console.error('Lỗi không tải được loại nhân viên:', error);
+      }
+    });
   }
 
   loadTree(): void {
@@ -353,17 +366,7 @@ export class TreeComponent implements OnInit {
       return;
     }
 
-    // this.staffService.getStaffByCode(staff.staffCode).subscribe({
-    //   next: (data) => {
-    //     const fallbackId = this.resolveStaffId(data as StaffDetail);
-    //     if (!fallbackId) {
-    //       return;
-    //     }
 
-    //     this.applyEditStaffDialogState(fallbackId);
-    //   },
-    //   error: () => {}
-    // });
   }
 
   private applyEditStaffDialogState(staffId: number): void {

@@ -1,6 +1,5 @@
 package com.example.springboot.dto;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

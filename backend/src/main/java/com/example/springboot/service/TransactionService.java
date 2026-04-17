@@ -1,20 +1,18 @@
 package com.example.springboot.service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.example.springboot.dto.DetailCreationRequest;
 import com.example.springboot.dto.TransactionCreationRequest;
 import com.example.springboot.entity.Detail;
 import com.example.springboot.entity.Transaction;
 import com.example.springboot.repository.DetailRepository;
 import com.example.springboot.repository.TransactionRepository;
-
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Service
 public class TransactionService {
@@ -22,13 +20,13 @@ public class TransactionService {
   private TransactionRepository transactionRepository;
   @Autowired
   private DetailRepository detailRepository;
-  public List<Transaction> getTransactions(){
+
+  public List<Transaction> getTransactions() {
     return transactionRepository.findAll();
   }
 
   public Transaction getTransactionbyID(long id) {
-    return transactionRepository.findById(id)
-      .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch với ID: " + id));
+    return transactionRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch với ID: " + id));
   }
 
   @Transactional
@@ -40,9 +38,9 @@ public class TransactionService {
 
     // 2. Khởi tạo Transaction
     Transaction transaction = new Transaction();
-    transaction.setCustomer_phone(request.getCustomer_phone());
+    transaction.setCustomerPhone(request.getCustomerPhone());
     transaction.setStatus(request.getStatus());
-    transaction.setCreated_at(new Date());
+    transaction.setCreatedAt(new Date());
 
     // 3. Xây dựng details và tính tổng tiền
     long totalSum = 0;
@@ -56,10 +54,7 @@ public class TransactionService {
 
     // 4. Validate total từ frontend với tính toán backend
     if (request.getTotal() != totalSum) {
-      throw new IllegalArgumentException(
-        "Tổng tiền không khớp. Frontend: " + request.getTotal() +
-        ", Backend: " + totalSum
-      );
+      throw new IllegalArgumentException("Tổng tiền không khớp. Frontend: " + request.getTotal() + ", Backend: " + totalSum);
     }
 
     transaction.setTotal(totalSum);
@@ -70,12 +65,9 @@ public class TransactionService {
 
 
   @Transactional
-  public Transaction updateTransaction(
-    long id,
-    TransactionCreationRequest request) {
+  public Transaction updateTransaction(long id, TransactionCreationRequest request) {
 
-    Transaction transaction = transactionRepository.findById(id)
-      .orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch với ID: " + id));
+    Transaction transaction = transactionRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy giao dịch với ID: " + id));
 
     if (request.getDetails() == null || request.getDetails().isEmpty()) {
       throw new IllegalArgumentException("Đơn hàng phải có ít nhất một mặt hàng");
@@ -83,7 +75,7 @@ public class TransactionService {
 
     detailRepository.deleteByTransactionId(id);
 
-    transaction.setCustomer_phone(request.getCustomer_phone());
+    transaction.setCustomerPhone(request.getCustomerPhone());
     transaction.setStatus(request.getStatus());
 
     long totalSum = 0;
@@ -97,10 +89,7 @@ public class TransactionService {
 
     // 5. Validate total từ frontend với tính toán backend
     if (request.getTotal() != totalSum) {
-      throw new IllegalArgumentException(
-        "Tổng tiền không khớp. Frontend: " + request.getTotal() +
-        ", Backend: " + totalSum
-      );
+      throw new IllegalArgumentException("Tổng tiền không khớp. Frontend: " + request.getTotal() + ", Backend: " + totalSum);
     }
 
     // 6. Cập nhật tổng tiền và danh sách detail mới
@@ -125,14 +114,9 @@ public class TransactionService {
     }
 
     long subTotal = dReq.getValue() * dReq.getQuantity();
-    return Detail.builder()
-      .card_type(dReq.getCard_type())
-      .value(dReq.getValue())
-      .quantity(dReq.getQuantity())
-      .sub_total(subTotal)
-      .transaction(transaction)
-      .build();
+    return Detail.builder().card_type(dReq.getCard_type()).value(dReq.getValue()).quantity(dReq.getQuantity()).sub_total(subTotal).transaction(transaction).build();
   }
+
   public void deleteTransaction(long id) {
     transactionRepository.deleteById(id);
   }

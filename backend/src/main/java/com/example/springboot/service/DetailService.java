@@ -1,15 +1,14 @@
 package com.example.springboot.service;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.example.springboot.dto.DetailCreationRequest;
 import com.example.springboot.entity.Detail;
 import com.example.springboot.entity.Transaction;
 import com.example.springboot.repository.DetailRepository;
 import com.example.springboot.repository.TransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class DetailService {
@@ -26,15 +25,9 @@ public class DetailService {
 
   public Detail createDetail(long transactionID, DetailCreationRequest request) {
     Transaction transaction = transactionService.getTransactionbyID(transactionID);
-    
+
     // Tạo detail mới - Frontend đã guard duplicate
-    Detail detail = Detail.builder()
-      .transaction(transaction)
-      .card_type(request.getCard_type())
-      .value(request.getValue())
-      .quantity(request.getQuantity())
-      .sub_total(request.getValue() * request.getQuantity())
-      .build();
+    Detail detail = Detail.builder().transaction(transaction).card_type(request.getCard_type()).value(request.getValue()).quantity(request.getQuantity()).sub_total(request.getValue() * request.getQuantity()).build();
 
     return detailRepository.save(detail);
   }
