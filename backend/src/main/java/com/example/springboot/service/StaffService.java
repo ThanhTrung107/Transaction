@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 public class StaffService {
   @Autowired
   private StaffRepository staffRepo;
-
   @Autowired
   private ApParamRepository apParamRepo;
   @Autowired
@@ -41,42 +40,29 @@ public class StaffService {
     return staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
   }
 
-  public Staff createStaff(long departmentID, StaffCreation request) {
-    if (staffRepo.existsByStaffCode(request.getStaffCode())) {
-      throw new RuntimeException("Mã nhân viên '" + request.getStaffCode() + "' đã tồn tại");
+  public Staff saveStaff(StaffCreation request) {
+    Long id = request.getId() != null && request.getId() > 0 ? request.getId() : -1L;
+    boolean isUpdate = id != -1L;
+
+    if (staffRepo.existsByStaffCodeAndIdNot(request.getStaffCode(), id)) {
+      throw new RuntimeException("Mã nhân viên '" + request.getStaffCode() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
-    if (staffRepo.existsByEmail(request.getEmail())) {
-      throw new RuntimeException("Email '" + request.getEmail() + "' đã tồn tại");
+    if (staffRepo.existsByEmailAndIdNot(request.getEmail(), id)) {
+      throw new RuntimeException("Email '" + request.getEmail() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
-    if (staffRepo.existsByPhoneNumber(request.getPhoneNumber())) {
-      throw new RuntimeException("Số điện thoại '" + request.getPhoneNumber() + "' đã tồn tại");
+    if (staffRepo.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), id)) {
+      throw new RuntimeException("Số điện thoại '" + request.getPhoneNumber() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
-    if (staffRepo.existsByIdNumber(request.getIdNumber())) {
-      throw new RuntimeException("Số CCCD '" + request.getIdNumber() + "' đã tồn tại");
+    if (staffRepo.existsByIdNumberAndIdNot(request.getIdNumber(), id)) {
+      throw new RuntimeException("Số CCCD '" + request.getIdNumber() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
 
-    Department department = departmentService.getDepartmentbyID(departmentID);
-
-    Staff staff = Staff.builder().department(department).depId(department.getId())  // Set depId explicitly
-      .staffName(request.getStaffName()).staffCode(request.getStaffCode()).staffType(request.getStaffType()).email(request.getEmail()).phoneNumber(request.getPhoneNumber()).address(request.getAddress()).description(request.getDesciption()).idNumber(request.getIdNumber()).status(request.getStatus()).birthDay(request.getBirthDay()).build();
-
-    return staffRepo.save(staff);
-  }
-
-  public Staff updateStaff(long staffId, StaffCreation request) {
-    Staff staff = staffRepo.findById(staffId).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + staffId));
-
-    if (staffRepo.existsByStaffCodeAndIdNot(request.getStaffCode(), staffId)) {
-      throw new RuntimeException("Mã nhân viên '" + request.getStaffCode() + "' đã được sử dụng bởi nhân viên khác");
-    }
-    if (staffRepo.existsByEmailAndIdNot(request.getEmail(), staffId)) {
-      throw new RuntimeException("Email '" + request.getEmail() + "' đã được sử dụng bởi nhân viên khác");
-    }
-    if (staffRepo.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), staffId)) {
-      throw new RuntimeException("Số điện thoại '" + request.getPhoneNumber() + "' đã được sử dụng bởi nhân viên khác");
-    }
-    if (staffRepo.existsByIdNumberAndIdNot(request.getIdNumber(), staffId)) {
-      throw new RuntimeException("Số CCCD '" + request.getIdNumber() + "' đã được sử dụng bởi nhân viên khác");
+    Staff staff;
+    if (isUpdate) {
+      staff = staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
+    } else {
+      Department department = departmentService.getDepartmentbyID(request.getDepId());
+      staff = Staff.builder().department(department).depId(department.getId()).build();
     }
 
     staff.setStaffName(request.getStaffName());
@@ -91,16 +77,6 @@ public class StaffService {
     staff.setBirthDay(request.getBirthDay());
 
     return staffRepo.save(staff);
-  }
-
-  public Staff saveStaff(StaffCreation request) {
-    if (request.getId() == null || request.getId() == 0) {
-      // Create
-      return createStaff(request.getDepId(), request);
-    } else {
-      // Update
-      return updateStaff(request.getId(), request);
-    }
   }
 
   public void deleteStaff(long staffId) {
