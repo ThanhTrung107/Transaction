@@ -47,7 +47,8 @@ public class TransactionService {
     List<Detail> details = new ArrayList<>();
 
     for (DetailCreationRequest dReq : request.getDetails()) {
-      Detail detail = buildDetail(dReq, transaction);
+      long subTotal = dReq.getValue() * dReq.getQuantity();
+      Detail detail = Detail.builder().card_type(dReq.getCard_type()).value(dReq.getValue()).quantity(dReq.getQuantity()).sub_total(subTotal).transaction(transaction).build();
       totalSum += detail.getSub_total();
       details.add(detail);
     }
@@ -82,7 +83,8 @@ public class TransactionService {
     List<Detail> newDetails = new ArrayList<>();
 
     for (DetailCreationRequest dReq : request.getDetails()) {
-      Detail detail = buildDetail(dReq, transaction);
+      long subTotal = dReq.getValue() * dReq.getQuantity();
+      Detail detail = Detail.builder().card_type(dReq.getCard_type()).value(dReq.getValue()).quantity(dReq.getQuantity()).sub_total(subTotal).transaction(transaction).build();
       totalSum += detail.getSub_total();
       newDetails.add(detail);
     }
@@ -98,23 +100,6 @@ public class TransactionService {
 
     return transactionRepository.save(transaction);
 
-  }
-
-  // Helper method: Xây dựng Detail từ DetailCreationRequest
-  private Detail buildDetail(DetailCreationRequest dReq, Transaction transaction) {
-    // Validate từng detail
-    if (dReq.getValue() <= 0) {
-      throw new IllegalArgumentException("Giá trị chi tiết phải lớn hơn 0");
-    }
-    if (dReq.getQuantity() <= 0) {
-      throw new IllegalArgumentException("Số lượng chi tiết phải lớn hơn 0");
-    }
-    if (dReq.getCard_type() < 0) {
-      throw new IllegalArgumentException("Loại thẻ không được để trống");
-    }
-
-    long subTotal = dReq.getValue() * dReq.getQuantity();
-    return Detail.builder().card_type(dReq.getCard_type()).value(dReq.getValue()).quantity(dReq.getQuantity()).sub_total(subTotal).transaction(transaction).build();
   }
 
   public void deleteTransaction(long id) {

@@ -1,0 +1,30 @@
+::ng-deep .p-dialog-mask {
+  background: radial-gradient(circle at center, rgba(127, 29, 29, 0.35), rgba(15, 23, 42, 0.85));
+}
+::ng-deep .p-dialog {
+  background: #fff7f7;
+  box-shadow: 0 24px 70px rgba(127, 29, 29, 0.32);
+  border-radius: 16px;
+  overflow: hidden;
+}
+::ng-deep .p-dialog .p-dialog-header {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  border-bottom: 0;
+  padding: 1rem 1.25rem;
+}
+::ng-deep .p-dialog .p-dialog-title {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+::ng-deep .p-dialog .p-dialog-header-icons .p-dialog-header-close {
+  color: #fee2e2;
+}
+::ng-deep .p-dialog .p-dialog-content {
+  padding: 1.25rem;
+  background: #fff7f7;
+}
+::ng-deep .p-dialog .p-dialog-footer {
+  background: #fff7f7;
+  padding: 0 1.25rem 1.25rem;
+}

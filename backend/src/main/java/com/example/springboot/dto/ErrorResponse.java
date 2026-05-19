@@ -15,6 +15,7 @@ import lombok.Setter;
 @Builder
 public class ErrorResponse {
   private String status;        // "error"
+  private String customCode;    // App specific custom code using AppHttpStatus
   private String message;       // Error message
   private LocalDateTime timestamp;
   private String path;          // Request path

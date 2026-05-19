@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { TreeNode } from 'primeng/api';
 import { TreeModule } from 'primeng/tree';
 import { ButtonModule } from 'primeng/button';
@@ -8,9 +9,9 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { DepartmentService, DepartmentTree } from '../../services/department.service';
 import { StaffService, StaffCreation, StaffType } from '../../services/staff.service';
-import { DepartmentDialogComponent } from '../dialogs/department-dialog.component';
-import { StaffDialogComponent } from '../dialogs/staff-dialog.component';
-import { ConfirmDeleteDialogComponent } from '../dialogs/confirm-delete.component';
+import { DepartmentDialogComponent } from '../dialogs/department/department-dialog.component';
+import { StaffDialogComponent } from '../dialogs/staff/staff-dialog.component';
+import { ConfirmDeleteDialogComponent } from '../dialogs/confirm/confirm-delete.component';
 
 interface StaffDetail {
   id?: number;
@@ -62,6 +63,7 @@ export class TreeComponent implements OnInit {
   
   // Staff list display
   selectedDepartmentId: number | null = null;
+  currentDepartmentIds: number[] = [];
   selectedDepartmentName = '';
   selectedDepartmentNodeKey: string | null = null;  // Track selected node key for highlighting
   staffList: StaffDetail[] = [];
@@ -85,6 +87,7 @@ export class TreeComponent implements OnInit {
   deleteType: 'department' | 'staff' = 'department';
   deleteId: number | null = null;
   deleteMessage = '';
+  deleteErrorMessage = '';
   isDeleting = false;
 
   constructor(
@@ -158,6 +161,19 @@ export class TreeComponent implements OnInit {
     });
   }
 
+  private getAllDepartmentIds(node: TreeNode<OrganizationNodeData>): number[] {
+    const ids: number[] = [];
+    if (node.data?.kind === 'department' && node.data.departmentId) {
+      ids.push(node.data.departmentId);
+    }
+    if (node.children) {
+      node.children.forEach(child => {
+        ids.push(...this.getAllDepartmentIds(child));
+      });
+    }
+    return ids;
+  }
+
   onNodeSelect(node: any): void {
     if (!node || !node.data) {
       this.staffList = [];
@@ -171,35 +187,41 @@ export class TreeComponent implements OnInit {
     if (node.data.kind === 'department' && node.data.departmentId) {
       // Track selected department node for highlighting
       this.selectedDepartmentNodeKey = node.key;
-      // Kiểm tra nếu node có children (không phải node cuối)
-      if (node.children && node.children.length > 0) {
-        // Node có con - chỉ hiển thị children, không hiển thị staff
-        this.staffList = [];
-        this.selectedDepartmentName = '';
-        this.selectedDepartmentId = null;
-        return;
-      }
-
-      // Node cuối (không có children) - hiển thị staff
       this.selectedDepartmentId = node.data.departmentId;
       this.selectedDepartmentName = node.label || '';
       this.loadingStaff = true;
       this.staffErrorMessage = '';
 
-      this.staffService.getStaffByDepartment(node.data.departmentId).subscribe({
-        next: (staffs) => {
-          this.staffList = (staffs ?? []).map(staff => ({
-            ...staff,
-            staffId: staff.id ?? staff.staffId,
-            staffTypeName: staff.staffTypeName || ''
-          } as StaffDetail));
-          this.loadingStaff = false;
-        },
-        error: (error) => {
-          this.loadingStaff = false;
-          this.staffErrorMessage = error?.error?.message || 'Không tải được danh sách nhân viên';
-        }
-      });
+      const allDepIds = this.getAllDepartmentIds(node);
+      this.currentDepartmentIds = allDepIds;
+      const requests = allDepIds.map(id => this.staffService.getStaffByDepartment(id));
+
+      if (requests.length > 0) {
+        forkJoin(requests).subscribe({
+          next: (responses) => {
+            let combinedStaffs: StaffDetail[] = [];
+            responses.forEach(staffs => {
+              if (staffs) {
+                const mapped = staffs.map(staff => ({
+                  ...staff,
+                  staffId: staff.id ?? staff.staffId,
+                  staffTypeName: staff.staffTypeName || ''
+                } as StaffDetail));
+                combinedStaffs = combinedStaffs.concat(mapped);
+              }
+            });
+            this.staffList = combinedStaffs;
+            this.loadingStaff = false;
+          },
+          error: (error) => {
+            this.loadingStaff = false;
+            this.staffErrorMessage = error?.error?.message || 'Không tải được danh sách nhân viên';
+          }
+        });
+      } else {
+        this.staffList = [];
+        this.loadingStaff = false;
+      }
     } else if (node.data.kind === 'staff') {
       // If staff node is selected, keep showing the department's staff list
       return;
@@ -280,6 +302,7 @@ export class TreeComponent implements OnInit {
     this.deleteType = 'department';
     this.deleteId = departmentId;
     this.deleteMessage = `Bạn có chắc chắn muốn xóa phòng ban "${departmentName}"?`;
+    this.deleteErrorMessage = '';
     this.showConfirmDelete = true;
   }
 
@@ -287,6 +310,8 @@ export class TreeComponent implements OnInit {
     if (!this.deleteId) return;
 
     this.isDeleting = true;
+    this.deleteErrorMessage = '';
+    
     if (this.deleteType === 'department') {
       this.departmentService.deleteDepartment(this.deleteId).subscribe({
         next: () => {
@@ -297,7 +322,12 @@ export class TreeComponent implements OnInit {
         error: (error) => {
           this.isDeleting = false;
           console.error('Error deleting department:', error);
-          alert(error?.error?.message || 'Không thể xóa phòng ban');
+          const errMsg = error?.error?.message || '';
+          if (errMsg.includes('ORA-02292') || errMsg.includes('child record found')) {
+            this.deleteErrorMessage = 'Phòng ban đang chứa nhân viên (hoặc phòng ban con), không thể xóa được.';
+          } else {
+            this.deleteErrorMessage = errMsg || 'Không thể xóa phòng ban';
+          }
         }
       });
     } else if (this.deleteType === 'staff') {
@@ -305,14 +335,16 @@ export class TreeComponent implements OnInit {
         next: () => {
           this.isDeleting = false;
           this.showConfirmDelete = false;
-          if (this.selectedDepartmentId) {
-            this.loadStaffList(this.selectedDepartmentId);
+          if (this.currentDepartmentIds.length > 0) {
+            this.loadStaffListByDepIds(this.currentDepartmentIds);
+          } else if (this.selectedDepartmentId) {
+            this.loadStaffListByDepIds([this.selectedDepartmentId]);
           }
         },
         error: (error) => {
           this.isDeleting = false;
           console.error('Error deleting staff:', error);
-          alert(error?.error?.message || 'Không thể xóa nhân viên');
+          this.deleteErrorMessage = error?.error?.message || 'Không thể xóa nhân viên';
         }
       });
     }
@@ -386,8 +418,10 @@ export class TreeComponent implements OnInit {
   }
 
   onStaffSaved(staff: StaffCreation): void {
-    if (this.selectedDepartmentId) {
-      this.loadStaffList(this.selectedDepartmentId);
+    if (this.currentDepartmentIds.length > 0) {
+      this.loadStaffListByDepIds(this.currentDepartmentIds);
+    } else if (this.selectedDepartmentId) {
+      this.loadStaffListByDepIds([this.selectedDepartmentId]);
     }
   }
 
@@ -399,28 +433,45 @@ export class TreeComponent implements OnInit {
     this.deleteType = 'staff';
     this.deleteId = staffId;
     this.deleteMessage = `Bạn có chắc chắn muốn xóa nhân viên "${staffName}"?`;
+    this.deleteErrorMessage = '';
     this.showConfirmDelete = true;
   }
 
-  private loadStaffList(depId: number): void {
-    this.selectedDepartmentId = depId;
+  private loadStaffListByDepIds(depIds: number[]): void {
     this.loadingStaff = true;
     this.staffErrorMessage = '';
 
-    this.staffService.getStaffByDepartment(depId).subscribe({
-      next: (staffs) => {
-        this.staffList = (staffs ?? []).map(staff => ({
-          ...staff,
-          staffId: this.resolveStaffId(staff as any) ?? undefined,
-          staffTypeName: staff.staffTypeName || ''
-        } as StaffDetail));
+    const requests = depIds.map(id => this.staffService.getStaffByDepartment(id));
+    if (requests.length > 0) {
+      forkJoin(requests).subscribe({
+        next: (responses) => {
+          let combinedStaffs: StaffDetail[] = [];
+          responses.forEach(staffs => {
+            if (staffs) {
+              const mapped = staffs.map(staff => ({
+                ...staff,
+                staffId: this.resolveStaffId(staff as any) ?? undefined,
+                staffTypeName: staff.staffTypeName || ''
+              } as StaffDetail));
+              combinedStaffs = combinedStaffs.concat(mapped);
+            }
+          });
+          this.staffList = combinedStaffs;
+          this.loadingStaff = false;
+        },
+        error: (error) => {
+          this.loadingStaff = false;
+          this.staffErrorMessage = error?.error?.message || 'Không tải được danh sách nhân viên';
+        }
+      });
+    } else {
+      this.staffList = [];
+      this.loadingStaff = false;
+    }
+  }
 
-        this.loadingStaff = false;
-      },
-      error: (error) => {
-        this.loadingStaff = false;
-        this.staffErrorMessage = error?.error?.message || 'Không tải được danh sách nhân viên';
-      }
-    });
+  private loadStaffList(depId: number): void {
+    // Left for backward compatibility if needed elsewhere, but redirects to new logic
+    this.loadStaffListByDepIds([depId]);
   }
 }

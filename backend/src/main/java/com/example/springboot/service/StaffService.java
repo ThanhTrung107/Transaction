@@ -1,10 +1,13 @@
 package com.example.springboot.service;
 
+import com.example.springboot.constant.Constants;
 import com.example.springboot.dto.ApParamRequest;
 import com.example.springboot.dto.StaffCreation;
 import com.example.springboot.entity.ApParam;
 import com.example.springboot.entity.Department;
 import com.example.springboot.entity.Staff;
+import com.example.springboot.exception.AppException;
+import com.example.springboot.exception.AppHttpStatus;
 import com.example.springboot.repository.ApParamRepository;
 import com.example.springboot.repository.StaffRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +32,7 @@ public class StaffService {
   }
 
   public List<StaffCreation> getByDepartment(long depId) {
-    List<Staff> allStaff = staffRepo.findByDepIdAndStatus(depId, "1");
+    List<Staff> allStaff = staffRepo.findByDepIdAndStatus(depId, Constants.ACTIVE_STATUS);
 
     Map<String, String> staffTypeLookup = apParamRepo.findById_ParType("STAFF_TYPE").stream().collect(Collectors.toMap(ap -> ap.getId().getParValue(), ApParam::getParName, (existing, replacement) -> existing));
 
@@ -37,7 +40,7 @@ public class StaffService {
   }
 
   public Staff getStaffByID(long id) {
-    return staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
+    return staffRepo.findById(id).orElseThrow(() -> new AppException(AppHttpStatus.NOT_FOUND));
   }
 
   public Staff saveStaff(StaffCreation request) {
@@ -45,21 +48,21 @@ public class StaffService {
     boolean isUpdate = id != -1L;
 
     if (staffRepo.existsByStaffCodeAndIdNot(request.getStaffCode(), id)) {
-      throw new RuntimeException("Mã nhân viên '" + request.getStaffCode() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
+      throw new AppException(AppHttpStatus.BAD_REQUEST, "Mã nhân viên '" + request.getStaffCode() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
     if (staffRepo.existsByEmailAndIdNot(request.getEmail(), id)) {
-      throw new RuntimeException("Email '" + request.getEmail() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
+      throw new AppException(AppHttpStatus.BAD_REQUEST, "Email '" + request.getEmail() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
     if (staffRepo.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), id)) {
-      throw new RuntimeException("Số điện thoại '" + request.getPhoneNumber() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
+      throw new AppException(AppHttpStatus.BAD_REQUEST, "Số điện thoại '" + request.getPhoneNumber() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
     if (staffRepo.existsByIdNumberAndIdNot(request.getIdNumber(), id)) {
-      throw new RuntimeException("Số CCCD '" + request.getIdNumber() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
+      throw new AppException(AppHttpStatus.BAD_REQUEST, "Số CCCD '" + request.getIdNumber() + "' đã " + (isUpdate ? "được sử dụng bởi nhân viên khác" : "tồn tại"));
     }
 
     Staff staff;
     if (isUpdate) {
-      staff = staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
+      staff = staffRepo.findById(id).orElseThrow(() -> new AppException(AppHttpStatus.NOT_FOUND));
     } else {
       Department department = departmentService.getDepartmentbyID(request.getDepId());
       staff = Staff.builder().department(department).depId(department.getId()).build();

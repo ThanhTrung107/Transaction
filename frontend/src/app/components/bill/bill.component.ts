@@ -309,6 +309,14 @@ export class BillComponent implements OnInit {
       this.notificationService.showWarning('Giá trị phải lớn hơn 0');
       return false;
     }
+    if (this.currentDetail.quantity <= 0) {
+      this.notificationService.showWarning('Số lượng phải lớn hơn 0');
+      return false;
+    }
+    if (this.currentDetail.card_type < 0) {
+      this.notificationService.showWarning('Loại thẻ không hợp lệ');
+      return false;
+    }
     return true;
   }
 
