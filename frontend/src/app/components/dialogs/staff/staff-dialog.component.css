@@ -29,3 +29,95 @@
   background: #f8fafc;
   padding: 0 1.25rem 1.25rem;
 }
+
+/* Calendar styling */
+::ng-deep .custom-calendar-wrapper {
+  display: flex !important;
+  align-items: stretch;
+}
+
+::ng-deep .custom-calendar-wrapper .p-inputtext {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 1rem;
+  color: #1e293b;
+  outline: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  min-width: 0;
+}
+
+::ng-deep .custom-calendar-wrapper .p-inputtext::placeholder {
+  color: #94a3b8;
+}
+
+::ng-deep .custom-calendar-wrapper .p-button {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 0.75rem !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+::ng-deep .custom-calendar-wrapper .p-button:hover {
+  background: transparent !important;
+  color: #0ea5e9 !important;
+}
+
+::ng-deep .custom-calendar-wrapper .p-button .p-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: currentColor !important;
+}
+
+/* Calendar panel styling */
+::ng-deep .p-datepicker {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+}
+
+::ng-deep .p-datepicker .p-datepicker-header {
+  background: linear-gradient(135deg, #0f766e, #0e7490);
+  border-bottom: 1px solid #cbd5e1;
+  padding: 0.75rem;
+  color: white;
+}
+
+::ng-deep .p-datepicker .p-datepicker-header .p-datepicker-title {
+  color: white;
+  font-weight: 600;
+}
+
+::ng-deep .p-datepicker .p-datepicker-header-buttons .p-button {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+::ng-deep .p-datepicker .p-datepicker-header-buttons .p-button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+::ng-deep .p-datepicker table td.p-datepicker-other-month > span,
+::ng-deep .p-datepicker table td.p-datepicker-other-month > a {
+  color: #cbd5e1;
+}
+
+::ng-deep .p-datepicker table td > a.p-highlight {
+  background: #0f766e;
+}
+
+::ng-deep .p-datepicker table td > a.p-highlight:hover {
+  background: #0d5d57;
+}
